@@ -4,9 +4,8 @@ import matplotlib.pyplot as plt
 
 
 def show_distributions(data):
-    """Funcion que grafica histogramas y gráficos de barras para un dataframe que se desea explorar
-    input: dataframe de pandas
-
+    """Funcion que grafica histogramas y gráficos de barras para un dataframe que se desea explorar\n
+    input: dataframe de pandas\n\n
     consideraciones: no pasarle a la funcion ninguna variable que sea un objeto o categorica de demasiados valores únicos"""
     cols = list(data.columns)
 
