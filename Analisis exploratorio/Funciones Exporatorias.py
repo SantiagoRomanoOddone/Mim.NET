@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 
 
 def show_distributions(data):
+    """Funcion que grafica histogramas y gráficos de barras para un dataframe que se desea explorar
+    input: dataframe de pandas
+
+    consideraciones: """
     cols = list(data.columns)
 
     graf_cell = int(len(cols)**0.5//1 + 1)
@@ -22,7 +26,9 @@ def show_distributions(data):
             ax[pos].bar(graf.index, graf['cant'])
             ax[pos].set_xticklabels(ax[pos].get_xticklabels(), rotation=90)
         elif data[col].dtype in ['int64', 'float64']:
-            ax[pos].hist(data[col], bins=min(50, len(data)**0.5), edgecolor='white', linewidth=0.3)
+            ax[pos].hist(data[col], bins=min(50, round(len(data) ** 0.5),0), edgecolor='white', linewidth=0.3)
         else:
             print(f'{col} no se puede graficar')
         ax[pos].set_title(col)
+
+    return fig
