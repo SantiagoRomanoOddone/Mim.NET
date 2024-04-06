@@ -7,7 +7,7 @@ def show_distributions(data):
     """Funcion que grafica histogramas y gráficos de barras para un dataframe que se desea explorar
     input: dataframe de pandas
 
-    consideraciones: """
+    consideraciones: no pasarle a la funcion ninguna variable que sea un objeto o categorica de demasiados valores únicos"""
     cols = list(data.columns)
 
     graf_cell = int(len(cols)**0.5//1 + 1)
