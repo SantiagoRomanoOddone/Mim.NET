@@ -323,7 +323,11 @@ def fit_linear_regression(df, X, y, group = False, groupping_variable='', interc
         X_cols = df[X]
         y_cols = df[y]
 
-        model = LinearRegression().fit(X_cols, y_cols)
+        if intercept:
+            model = LinearRegression().fit(X_cols, y_cols)
+        else:
+            model = LinearRegression(fit_intercept=False).fit(X_cols, y_cols)
+
         df['linear_regression_prediction'] = model.predict(X_cols)
         
 
@@ -357,7 +361,11 @@ def fit_linear_regression(df, X, y, group = False, groupping_variable='', interc
             X_cols = df_groupped[X]
             y_cols = df_groupped[y]
 
-            model = LinearRegression().fit(X_cols, y_cols)
+            if intercept:
+                model = LinearRegression().fit(X_cols, y_cols)
+            else:
+                model = LinearRegression(fit_intercept=False).fit(X_cols, y_cols)
+                
             df.loc[df[groupping_variable] == group, f'linear_regression_prediction_{groupping_variable}'] = model.predict(X_cols)
             df_groupped['linear_regression_prediction'] = model.predict(X_cols)
 
