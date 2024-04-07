@@ -365,7 +365,7 @@ def fit_linear_regression(df, X, y, group = False, groupping_variable='', interc
                 model = LinearRegression().fit(X_cols, y_cols)
             else:
                 model = LinearRegression(fit_intercept=False).fit(X_cols, y_cols)
-                
+
             df.loc[df[groupping_variable] == group, f'linear_regression_prediction_{groupping_variable}'] = model.predict(X_cols)
             df_groupped['linear_regression_prediction'] = model.predict(X_cols)
 
@@ -392,3 +392,36 @@ def fit_linear_regression(df, X, y, group = False, groupping_variable='', interc
         else:
             return df
 
+def add_fourier_terms(df, date_col, n_terms, pred = False ,pred_df=None):
+    '''
+    El propósito de esta función es agregar términos de Fourier a un DataFrame.
+    Son funciones de seno y coseno que se utilizan para modelar la estacionalidad en series de tiempo.
+    Importante notar que esta función solo agrega terminos de Fourier para la estacionalidad anual. 
+    En caso de querer agregar estacionalidad de otro periodo, se podría ajustar la funcion.
+        Por ejemplo: para estacionalidad mensual, la formula sería sin/cos(2 * np.pi * i * df[date_col].dt.month / 12)
+
+    Los terminos de Fourier nos podrían ser útiles para un xgboost como variables independientes, 
+    aunque las variables de fecha ya podrían ser suficientes para capturar la estacionalidad.
+    
+    Parámetros:
+    df: DataFrame
+    date_col: str, nombre de la columna de fecha en el DataFrame.
+    n_terms: int, número de términos de Fourier que se agregarán al DataFrame.
+
+    Retorna:
+    df: DataFrame con los términos de Fourier agregados.
+    '''
+
+    df[date_col] = pd.to_datetime(df[date_col])
+    for i in range(1, n_terms+1):
+        df[f'fourier_sin_{i}'] = np.sin(2 * np.pi * i * df[date_col].dt.dayofyear / 365)
+        df[f'fourier_cos_{i}'] = np.cos(2 * np.pi * i * df[date_col].dt.dayofyear / 365)
+
+    if pred:
+        pred_df[date_col] = pd.to_datetime(pred_df[date_col])
+        for i in range(1, n_terms+1):
+            pred_df[f'fourier_sin_{i}'] = np.sin(2 * np.pi * i * pred_df[date_col].dt.dayofyear / 365)
+            pred_df[f'fourier_cos_{i}'] = np.cos(2 * np.pi * i * pred_df[date_col].dt.dayofyear / 365)
+        return df, pred_df
+    else:
+        return df
