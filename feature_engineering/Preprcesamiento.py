@@ -252,10 +252,38 @@ def days_with_1_streak(df, bool_col, date_col):
     df[date_col] = pd.to_datetime(df[date_col])
     df[bool_col] = df[bool_col].astype(int)
     df.sort_values(by=[date_col], inplace=True)
-    
+
     i_streak = 0
     for i in range(len(df)):
         if df.loc[i, bool_col] == 1:
+            i_streak += 1
+            df.loc[i, f'{bool_col}_streak'] = i_streak
+        else:
+            df.loc[i, f'{bool_col}_streak'] = 0
+            i_streak = 0
+
+    return df
+
+def days_with_0_streak(df, bool_col, date_col):
+    '''
+    El propósito de esta función es contar el número de días consecutivos con una columna booleana inactiva.
+
+    Parámetros:
+    df: DataFrame
+    bool_col: str, nombre de la columna booleana en el DataFrame.
+    date_col: str, nombre de la columna de fecha en el DataFrame.
+
+    Retorna:
+    df: DataFrame con una nueva columna que expresa los dias con la columna booleana inactiva.
+    '''
+
+    df[date_col] = pd.to_datetime(df[date_col])
+    df[bool_col] = df[bool_col].astype(int)
+    df.sort_values(by=[date_col], inplace=True)
+    
+    i_streak = 0
+    for i in range(len(df)):
+        if df.loc[i, bool_col] == 0:
             i_streak += 1
             df.loc[i, f'{bool_col}_streak'] = i_streak
         else:
