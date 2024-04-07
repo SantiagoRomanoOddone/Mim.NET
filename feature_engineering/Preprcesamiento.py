@@ -235,3 +235,96 @@ def day_counter(df, bool_col, date_col):
                 df.loc[i, 'days_since'] = (df.loc[i, date_col] - last_date).days
 
     return df
+
+def fit_linear_regression(df, X, y, group = False, groupping_variable='', intercept=True, plot=False, pred= False, X_test= None):
+    '''
+    El propósito de esta función es ajustar un modelo de regresión lineal a un conjunto de datos.
+    Puede ser útil si buscamos encontrar una relación lineal entre dos o más variables.
+    Por ejemplo, encontrar la tendencia de los datos en el tiempo para diferentes subconjuntos de datos.
+    En caso de no agrupar, se ajustará un modelo de regresión lineal a todos los datos.
+
+    Parámetros:
+    df: DataFrame
+    X: str, nombre de la columna que se utilizará como variable independiente. (Puede ser una lista de columnas)
+    y: str, nombre de la columna que se utilizará como variable dependiente.
+    group: bool, si se quiere ajustar un modelo de regresión lineal para diferentes subconjuntos de datos.
+    groupping_variable: str, nombre de la columna que se utilizará para agrupar los datos. 
+        Por ejemplo, si elegimos por año, se ajustará un modelo de regresión lineal para cada año.
+    intercept: bool, si se quiere incluir el intercepto en el modelo.
+    plot: bool, si se quiere graficar la relación entre las variables.
+    pred: bool, si se quiere predecir los valores de y para un conjunto de datos de test.
+    X_test: DataFrame, conjunto de datos de prueba para evaluar el modelo. 
+        (El modelo va a predecir los valores para X_test usando los coeficientes ajustados en el conjunto de entrenamiento)
+
+
+    Retorna:
+    df: DataFrame con una nueva columna que contiene las predicciones del modelo de regresión lineal.
+    X_test: DataFrame con una nueva columna que contiene las predicciones del modelo de regresión lineal.
+    '''
+
+    if group == False:
+        print('Fitteando una regresión lineal en todo el conjunto de datos (sin agrupaciones)')
+        X_cols = df[X]
+        y_cols = df[y]
+
+        model = LinearRegression().fit(X_cols, y_cols)
+        df['linear_regression_prediction'] = model.predict(X_cols)
+        
+
+        if plot == True:
+            if len(X_cols.columns) == 1:
+                sns.scatterplot(x=X_cols.iloc[:, 0], y=y_cols, data=df)
+                sns.lineplot(x=X_cols.iloc[:, 0], y=df['linear_regression_prediction'], data=df)
+                plt.title('Regresión lineal')
+                plt.show()
+            else:
+                print('No se puede graficar la relación entre más de dos variables')
+        print(f'R2 score: {r2_score(y_cols, df["linear_regression_prediction"])}')
+
+        if pred == True:
+            print('Prediciendo valores para X_test')
+            X_test = X_test[X]
+            X_test['linear_regression_prediction'] = model.predict(X_test)
+            
+            return df, X_test
+        else:
+
+            return df
+        
+    else:
+        temp_df = df.copy()
+        print('Fitteando una regresión lineal agrupada por: ', groupping_variable)
+
+        for group in temp_df[groupping_variable].unique():
+            print(f'Regresión del grupo {group}')
+            df_groupped = temp_df[temp_df[groupping_variable] == group]
+            X_cols = df_groupped[X]
+            y_cols = df_groupped[y]
+
+            model = LinearRegression().fit(X_cols, y_cols)
+            df.loc[df[groupping_variable] == group, f'linear_regression_prediction_{groupping_variable}'] = model.predict(X_cols)
+            df_groupped['linear_regression_prediction'] = model.predict(X_cols)
+
+            if plot == True:
+                if len(X_cols.columns) == 1:
+                    sns.scatterplot(x=X_cols.iloc[:, 0], y=y_cols, data=df_groupped)
+                    sns.lineplot(x=X_cols.iloc[:, 0], y='linear_regression_prediction', data=df_groupped)
+                    plt.title(f'Regresión lineal para el grupo {group}')
+                    plt.show()
+                else:
+                    print('No se puede graficar la relación entre más de dos variables')
+            print(f'R2 score: {r2_score(y_cols, df_groupped["linear_regression_prediction"])}')
+
+            print('---------------------------------------------')
+
+            if pred:
+                print('Prediciendo valores para X_test')
+                X_test_groupped = X_test.copy()
+                X_test_groupped = X_test_groupped.loc[X_test_groupped[groupping_variable] == group, X]
+                X_test.loc[X_test[groupping_variable] == group, 'linear_regression_prediction'] = model.predict(X_test_groupped)
+
+        if pred:
+            return df, X_test
+        else:
+            return df
+
