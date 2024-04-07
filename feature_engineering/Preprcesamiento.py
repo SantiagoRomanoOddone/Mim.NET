@@ -203,7 +203,7 @@ class ZeroOneScaler(BaseEstimator, TransformerMixin):
 
 def day_counter(df, bool_col, date_col):
     '''
-    El propósito de esta función es contar el número de días que han pasado desde que se activó una columna booleana.
+    El propósito de esta función es contar el número de días que pasaron desde que se activó una columna booleana.
 
     Parámetros:
     df: DataFrame
@@ -211,7 +211,7 @@ def day_counter(df, bool_col, date_col):
     date_col: str, nombre de la columna de fecha en el DataFrame.
 
     Retorna:
-    df: DataFrame con una nueva columna que cuenta el número de días que han pasado desde que se activó la columna booleana.
+    df: DataFrame con una nueva columna que cuenta el número de días que pasaron desde que se activó la columna booleana.
     '''
 
     df[date_col] = pd.to_datetime(df[date_col])
@@ -226,13 +226,41 @@ def day_counter(df, bool_col, date_col):
 
     for i in range(len(df)):
         if i < first_pos:
-            df.loc[i, 'days_since'] = 0
+            df.loc[i, f'days_since_{bool_col}'] = 0
         else:
             if df.loc[i, bool_col] == 1:
-                df.loc[i, 'days_since'] = 0
+                df.loc[i, f'days_since_{bool_col}'] = 0
                 last_date = df.loc[i, date_col]
             else:
-                df.loc[i, 'days_since'] = (df.loc[i, date_col] - last_date).days
+                df.loc[i, f'days_since_{bool_col}'] = (df.loc[i, date_col] - last_date).days
+
+    return df
+
+def days_with_1_streak(df, bool_col, date_col):
+    '''
+    El propósito de esta función es contar el número de días consecutivos con una columna booleana activa.
+
+    Parámetros:
+    df: DataFrame
+    bool_col: str, nombre de la columna booleana en el DataFrame.
+    date_col: str, nombre de la columna de fecha en el DataFrame.
+
+    Retorna:
+    df: DataFrame con una nueva columna que expresa los dias con la columna booleana activa.
+    '''
+
+    df[date_col] = pd.to_datetime(df[date_col])
+    df[bool_col] = df[bool_col].astype(int)
+    df.sort_values(by=[date_col], inplace=True)
+    
+    i_streak = 0
+    for i in range(len(df)):
+        if df.loc[i, bool_col] == 1:
+            i_streak += 1
+            df.loc[i, f'{bool_col}_streak'] = i_streak
+        else:
+            df.loc[i, f'{bool_col}_streak'] = 0
+            i_streak = 0
 
     return df
 
