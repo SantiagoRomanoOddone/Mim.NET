@@ -201,3 +201,37 @@ class ZeroOneScaler(BaseEstimator, TransformerMixin):
         return data_slice
 
 
+def day_counter(df, bool_col, date_col):
+    '''
+    El propósito de esta función es contar el número de días que han pasado desde que se activó una columna booleana.
+
+    Parámetros:
+    df: DataFrame
+    bool_col: str, nombre de la columna booleana en el DataFrame.
+    date_col: str, nombre de la columna de fecha en el DataFrame.
+
+    Retorna:
+    df: DataFrame con una nueva columna que cuenta el número de días que han pasado desde que se activó la columna booleana.
+    '''
+
+    df[date_col] = pd.to_datetime(df[date_col])
+    df[bool_col] = df[bool_col].astype(int)
+    df.sort_values(by=[date_col], inplace=True)
+
+    # Obtener el primer dia con un 1
+    last_date = df.loc[df[bool_col] == 1, date_col].iloc[0]
+
+    # Obtener la primer posicion con un 1
+    first_pos = df[bool_col].idxmax()
+
+    for i in range(len(df)):
+        if i < first_pos:
+            df.loc[i, 'days_since'] = 0
+        else:
+            if df.loc[i, bool_col] == 1:
+                df.loc[i, 'days_since'] = 0
+                last_date = df.loc[i, date_col]
+            else:
+                df.loc[i, 'days_since'] = (df.loc[i, date_col] - last_date).days
+
+    return df
