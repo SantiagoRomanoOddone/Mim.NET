@@ -425,3 +425,132 @@ def add_fourier_terms(df, date_col, n_terms, pred = False ,pred_df=None):
         return df, pred_df
     else:
         return df
+    
+def aggregation_by_col(df, group_col, agg_col, agg_type='mean'):
+    '''
+    El propósito de la función es agregar datos por una columna especifica de un Dataframe (por agrupaciones) y agregar la columna con la estadística agregada.
+
+    Parámetros:
+    df: DataFrame
+    group_col: str, nombre de la columna por la cual se quiere agrupar. Puede ser una lista de columnas.
+    agg_col: str, nombre de la columna que se quiere agregar. Puede ser una lista de columnas.
+    agg_type: str, tipo de agregación que se quiere realizar. Puede ser 'mean', 'sum', 'median', 'max', 'min', 'std', 'var', 'count'.
+
+    Retorna:
+    df: DataFrame con una nueva columna que contiene la estadística agregada.
+    '''
+
+    if type(agg_col) == str:
+        agg_col = [agg_col]
+    
+    if len(agg_col) > 1:
+        if len(agg_type) > 1:
+            for i in agg_type:
+                for j in agg_col:
+                    df[f'{j}_{i}'] = df.groupby(group_col)[j].transform(i)
+        else:
+            for j in agg_col:
+                df[f'{j}_{agg_type}'] = df.groupby(group_col)[j].transform(i)
+    else:
+        if len(agg_type) > 1:
+            for i in agg_type:
+                df[f'{agg_col[0]}_{i}'] = df.groupby(group_col)[agg_col[0]].transform(i)
+        else:
+            df[f'{agg_col[0]}_{agg_type}'] = df.groupby(group_col)[agg_col[0]].transform(agg_type)
+    
+    return df
+
+def bining(df, cols, mode='quantile', q=None, limits=None):
+    '''
+    El propósito de esta función es discretizar variables continuas en intervalos.
+    Puede ser útil para convertir variables continuas en categóricas, y utilizar la variable categorica en un modelo de machine learning.
+
+    Parámetros:
+    df: DataFrame
+    cols: Lista de str, nombre de la columna que se quiere discretizar.
+    mode: str, modo de discretización. Puede ser 'quantile' o 'limits'.
+    q: int, número de cuantiles en los que se quiere dividir la variable.
+    limits: Lista de int, límites de los intervalos.
+
+    Retorna:
+    df: DataFrame con las columnas discretizadas.
+    '''
+    if mode == 'quantile':
+        for col in cols:
+            df[f'{col}_quantile'] = pd.qcut(df[col], q=q, labels=False)
+    elif mode == 'limits':
+        for col in cols:
+            df[f'{col}_bin'] = pd.cut(df[col], bins=limits, labels=False)
+    else:
+        print('Mode {} not supported, try "limits" or "quantile"'.format(mode))
+
+    return df
+
+def create_time_feat(df):
+    # Copy of df
+    df = df.copy()
+    # df.reset_index(inplace=True)
+    df['Date'] = pd.to_datetime(df['Date'])
+
+    # Creating time feats
+    df['year'] = df['Date'].dt.year
+    df['month'] = df['Date'].dt.month
+    df['day'] = df['Date'].dt.day
+    df['weekofyear'] = df['Date'].dt.weekofyear
+    df['quarter'] = df['Date'].dt.quarter
+    df['is_month_start'] = df['Date'].dt.is_month_start
+    df['is_month_end'] = df['Date'].dt.is_month_end
+    df['is_quarter_start'] = df['Date'].dt.is_quarter_start
+    df['is_quarter_end'] = df['Date'].dt.is_quarter_end
+    df['is_year_start'] = df['Date'].dt.is_year_start
+    df['is_year_end'] = df['Date'].dt.is_year_end
+    df['dayofyear'] = df['Date'].dt.dayofyear
+    
+    # Season of year
+    df['Winter'] = df['month'].isin([12, 1, 2])
+    df['Spring'] = df['month'].isin([3, 4, 5])
+    df['Summer'] = df['month'].isin([6, 7, 8])
+    df['Fall'] = df['month'].isin([9, 10, 11])
+    
+    # Trend
+    # df['Trend'] = range(1, len(df) + 1)
+
+    # Some special dates
+    # df['Black_Friday'] = (df['Date'] == '2023-11-24') | (df['Date'] == '2024-11-29')
+    # df['Christmas'] = (df['Date'] == '2023-12-25') | (df['Date'] == '2024-12-25')
+
+    # Turning variables into dummies
+    df = pd.get_dummies(df, columns=['year', 'month', 'day', 'weekofyear', 'quarter', 'is_month_start', 'is_month_end', 'is_quarter_start', 'is_quarter_end', 'is_year_start', 'is_year_end'],drop_first=False)
+
+    # Obtener las columnas que tienen valores False
+    columns_to_drop = [col for col in df.columns if '_False' in col]
+
+    # Eliminar las columnas que tienen valores False
+    df.drop(columns=columns_to_drop, inplace=True)
+    
+    # After turning variables into dummies, some of them should be kept as numerical as well
+    df['year'] = df['Date'].dt.year
+    df['month'] = df['Date'].dt.month
+    df['day'] = df['Date'].dt.day
+    df['weekofyear'] = df['Date'].dt.weekofyear
+    df['quarter'] = df['Date'].dt.quarter
+    
+    # 'dayofyear',
+    return df
+
+def calculate_mape(y_pred,y_true):
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
+def add_lags(df, feat, lags):
+    # Copy df
+    df = df.copy()
+
+    # Sorting dates
+    df.sort_values('Date', inplace=True)
+    
+    # Adding lags
+    for lag in lags:
+        df[feat + f'lag{lag}'] = df[feat].shift(lag)
+
+    return df

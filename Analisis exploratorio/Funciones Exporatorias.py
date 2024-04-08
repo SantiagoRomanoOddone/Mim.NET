@@ -31,3 +31,18 @@ def show_distributions(data):
         ax[pos].set_title(col)
 
     return fig
+
+def plot_missing_values(df, cols):
+    '''
+    Plottea los valores NaNs de un DataFrame.
+
+    Parámetros:
+    df: DataFrame
+    cols: Lista de str, nombre de la columna que se quiere graficar.
+    '''
+
+    df.isna().sum()[cols].plot(kind='bar', color='black')
+    plt.title('Missing values')
+    plt.ylabel('Number of missing values')
+    plt.show()
+
