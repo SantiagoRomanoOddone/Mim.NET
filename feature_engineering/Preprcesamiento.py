@@ -6,7 +6,17 @@ from sklearn.base import BaseEstimator, TransformerMixin
 
 
 def apply_log(data, features):
-    """Transformación logarítmica sobre una lista de columnas"""
+    """Transformación logarítmica sobre una lista de columnas\n
+    input:\n
+    * data: dataframe de pandas
+    * features: lista de columnas que deben recibir la transformacion\n
+    output: None\n
+    consideraciones:\n
+    * Modifica el dataframe de origen al usarla, por eso no es necesario reasignar el resultado de la funcion al dataframe
+    * Sólo debe recibir columnas numéricas
+    * Sólo debe recibir valores mayores o iguales que 0 (la funcion suma 1 antes de aplicar el logaritmo)
+    * La base del logaritmo es e
+    """
     for feature in features:
         # Aplicar log(1 + x) para evitar problemas con valores cero (base e)
         data[feature] = np.log1p(data[feature])
@@ -14,33 +24,76 @@ def apply_log(data, features):
 
 
 class OutlierCorrector(BaseEstimator, TransformerMixin):
-    """Objeto que tiene como finalidad aprender la media y desvio de un conjunto de columnas individualmente para luego realizar la detección y corrección de outliers en esa columna
-    Si la columna no es entero o float, no es una columna aceptable y se avisa al usuario"""
+    """Gestión de Outliers en un DataFrame de Pandas.
+
+    Esta clase crea objetos que, al ser instanciados, permiten identificar outliers
+    en un DataFrame de Pandas. Los outliers son valores que están muy por encima o
+    muy por debajo de la media de una columna. Estos valores se tratarán por separado
+    y se corregirán para reducir su impacto en el análisis posterior.
+
+    Args:
+        desv_threshold (int, optional): El umbral en desviaciones estándar para
+            identificar outliers. Por defecto es 3.
+
+    Attributes:
+        desv_threshold (int): El umbral en desviaciones estándar para identificar
+            outliers.
+        column_stats (dict): Un diccionario que contiene las estadísticas de cada
+            columna aprendidas durante el ajuste (fit) del modelo. Las estadísticas
+            incluyen la media y la desviación estándar de cada columna.
+
+    Methods:
+        params(): Imprime los parámetros del OutlierCorrector.
+        fit(data_slice, y=None): Ajusta el modelo para aprender las estadísticas de
+            cada columna del DataFrame proporcionado.
+        transform(data_slice): Transforma el DataFrame proporcionado, identificando y
+            corrigiendo los outliers según las estadísticas aprendidas durante el ajuste.
+    """
+
     def __init__(self, desv_threshold=3):
+        """Inicializa un OutlierCorrector con el umbral especificado."""
         self.desv_threshold = desv_threshold
         self.column_stats = {}
 
     def params(self):
+        """Imprime los parámetros del OutlierCorrector."""
         print(f'{"":->100}')
         print(f'desv_threshold: {self.desv_threshold}')
         print(f'column_stats: {self.column_stats}')
         print(f'{"":->100}')
 
     def fit(self, data_slice, y=None):
-        # Cada vez que se fitea, se debe limpiar las stats de las columnas
+        """Ajusta el modelo para aprender las estadísticas de cada columna.
+
+        Args:
+            data_slice (DataFrame): El DataFrame de Pandas del que se aprenderán las
+                estadísticas de las columnas.
+            y (array-like, optional): No se utiliza, solo se incluye para compatibilidad
+                con la interfaz de scikit-learn.
+
+        Returns:
+            self: Retorna una referencia al objeto OutlierCorrector ajustado.
+        """
         self.column_stats = {}
-        # Calcular la media y el desvío estándar para cada columna
         for col in data_slice.columns:
             if data_slice[col].dtype in ['int64', 'float64']:
                 mean = data_slice[col].mean()
                 std = data_slice[col].std()
                 self.column_stats[col] = {'mean': mean, 'std': std}
             else:
-                print(f'No se puede identificar outliers en la columna "{col}" debido a que no es una columna numerica')
+                print(f'No se puede identificar outliers en la columna "{col}" '
+                      f'debido a que no es una columna numérica')
         return self
 
     def transform(self, data_slice):
-        # Verificar y corregir los outliers para cada columna
+        """Transforma el DataFrame, identificando y corrigiendo outliers.
+
+        Args:
+            data_slice (DataFrame): El DataFrame de Pandas que se va a transformar.
+
+        Returns:
+            DataFrame: El DataFrame transformado con los outliers corregidos.
+        """
         for col in data_slice.columns:
             if col in self.column_stats:
                 mean = self.column_stats[col]['mean']
@@ -48,11 +101,14 @@ class OutlierCorrector(BaseEstimator, TransformerMixin):
                 lower_bound = mean - self.desv_threshold * std
                 upper_bound = mean + self.desv_threshold * std
 
-                # Corregir los outliers
-                data_slice[col] = np.where(data_slice[col] < lower_bound, mean - self.desv_threshold * std, data_slice[col])
-                data_slice[col] = np.where(data_slice[col] > upper_bound, mean + self.desv_threshold * std, data_slice[col])
+                data_slice[col] = np.where(data_slice[col] < lower_bound,
+                                           mean - self.desv_threshold * std,
+                                           data_slice[col])
+                data_slice[col] = np.where(data_slice[col] > upper_bound,
+                                           mean + self.desv_threshold * std,
+                                           data_slice[col])
             else:
-                print(f'La columna "{col}" no fue parte del fit de este transformer')
+                print(f'La columna "{col}" no fue parte del ajuste de este transformer')
 
         return data_slice
 
