@@ -26,37 +26,42 @@ def apply_log(data, features):
 class OutlierCorrector(BaseEstimator, TransformerMixin):
     """Gestión de Outliers en un DataFrame de Pandas.
 
-    Esta clase crea objetos que, al ser instanciados, permiten identificar outliers
-    en un DataFrame de Pandas. Los outliers son valores que están muy por encima o
-    muy por debajo de la media de una columna. Estos valores se tratarán por separado
-    y se corregirán para reducir su impacto en el análisis posterior.
+    Permite identificar outliers en un Dataframe de Pandas basado en el enfoque
+    de la media +/- X desvíos estándar. El cálculo se hace para cada columna de
+    los datos por separado y se guarda la media y el desvío de cada columna, de
+    forma de evitar el data leakage al preprocesar datos.
 
-    Args:
-        desv_threshold (int, optional): El umbral en desviaciones estándar para
-            identificar outliers. Por defecto es 3.
+    La forma de gestionar los outliers es reemplazarlos por el threshold
+    establecido. Por ejemplo, si se define que el limite para identificar
+    outliers es la media +/- 3 desvíos estándar, entonces los outliers
+    demasiado grandes se reemplazan por la media + 3 desvíos y los outliers
+    demasiado pequeños se reemplazan por la media - 3 desvíos
 
     Attributes:
         desv_threshold (int): El umbral en desviaciones estándar para identificar
-            outliers.
-        column_stats (dict): Un diccionario que contiene las estadísticas de cada
-            columna aprendidas durante el ajuste (fit) del modelo. Las estadísticas
-            incluyen la media y la desviación estándar de cada columna.
-
-    Methods:
-        params(): Imprime los parámetros del OutlierCorrector.
-        fit(data_slice, y=None): Ajusta el modelo para aprender las estadísticas de
-            cada columna del DataFrame proporcionado.
-        transform(data_slice): Transforma el DataFrame proporcionado, identificando y
-            corrigiendo los outliers según las estadísticas aprendidas durante el ajuste.
+            outliers. Es el mismo valor que se usa para su reemplazo.
+        column_stats (dict): información de la media y el desvío estándar de cada
+            columna en la fase de entrenamiento (fit).
     """
 
     def __init__(self, desv_threshold=3):
-        """Inicializa un OutlierCorrector con el umbral especificado."""
+        """Instanciado de un corrector de outliers.
+
+        Método init de OutlierCorrector
+
+        Note:
+            Do not include the `self` parameter in the ``Args`` section.
+
+        Args:
+            desv_threshold (int): cantidad de desvíos estándar que se usa como
+            umbral para detectar y posteriormente para reemplazar el valor de los
+            outlier.
+        """
         self.desv_threshold = desv_threshold
         self.column_stats = {}
 
     def params(self):
-        """Imprime los parámetros del OutlierCorrector."""
+        """Imprime los parámetros del OutlierCorrector por consola."""
         print(f'{"":->100}')
         print(f'desv_threshold: {self.desv_threshold}')
         print(f'column_stats: {self.column_stats}')
@@ -65,11 +70,12 @@ class OutlierCorrector(BaseEstimator, TransformerMixin):
     def fit(self, data_slice, y=None):
         """Ajusta el modelo para aprender las estadísticas de cada columna.
 
+        Note:
+            Debe pasarse únicamente columnas numéricas ('int64' o 'float64').
+
         Args:
             data_slice (DataFrame): El DataFrame de Pandas del que se aprenderán las
                 estadísticas de las columnas.
-            y (array-like, optional): No se utiliza, solo se incluye para compatibilidad
-                con la interfaz de scikit-learn.
 
         Returns:
             self: Retorna una referencia al objeto OutlierCorrector ajustado.
@@ -87,6 +93,10 @@ class OutlierCorrector(BaseEstimator, TransformerMixin):
 
     def transform(self, data_slice):
         """Transforma el DataFrame, identificando y corrigiendo outliers.
+
+        Note:
+            Debe pasarse un dataslice con columnas que tengan el mismo nombre
+            y dato que las columnas de entrenamiento (fit).
 
         Args:
             data_slice (DataFrame): El DataFrame de Pandas que se va a transformar.
@@ -114,17 +124,54 @@ class OutlierCorrector(BaseEstimator, TransformerMixin):
 
 
 class OneHot(BaseEstimator, TransformerMixin):
+    """One Hot Encoding en columnas categoricas de un DataFrame de Pandas.
+
+    Dado un conjunto de columnas de tipo object, esta clase aprende las
+    categorias de todas las columnas pasadas y procede a generar una columna
+    por cada categoria individual en donde las posibilidades son 1 o 0. La
+    matriz que devuelve el transform no es esparsa, solo tiene el One Hot Encoding.
+
+    Attributes:
+        exclude_last_column (bool): define si la última categoría será representada
+            con una columna propia o no. Por defecto es True, por lo que se excluye esa
+            última categoría y no tiene una columna propia, de forma que las columnas
+            resultantes no son linealmente dependientes entre sí.
+        column_categories (dict): información de las categorias que existen por cada
+            columna en la fase de entrenamiento (fit).
+    """
     def __init__(self, exclude_last_column=True):
-        self.column_categories = {}
+        """Instanciado de un one hot encoder.
+
+        Args:
+            exclude_last_column (bool): indica se debe incluir una columna con la
+            informacion de la última categoria o si se debe excluir para evitar
+            la dependencia lineal. Por defecto es True.
+        """
         self.exclude_last_column = exclude_last_column
+        self.column_categories = {}
 
     def params(self):
+        """Imprime los parámetros del OutlierCorrector por consola."""
         print(f'{"":->100}')
         print(f'exclude_last_column: {self.exclude_last_column}')
         print(f'column_categories: {self.column_categories}')
         print(f'{"":->100}')
 
     def fit(self, data, cols, y=None):
+        """Ajusta el modelo para aprender las categorías de cada columna.
+
+        Note:
+            Debe pasarse únicamente columnas de tipo object
+
+        Args:
+            data (DataFrame): El DataFrame de Pandas.
+            cols (list): lista de columnas del DataFrame en las que se quiere
+                hacer el One Hot Encoding.
+
+        Returns:
+            self: Retorna una referencia al objeto OutlierCorrector ajustado.
+        """
+
         # Cada vez que se fitea, se debe limpiar las categorias de las columnas
         self.column_categories = {}
         data_slice = data[cols]
@@ -140,6 +187,21 @@ class OneHot(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, data, cols):
+        """Transforma el DataFrame, reemplazando las columnas originales por las nuevas con 1s y 0s
+
+        Note:
+            Debe pasarse una lista de columnas que tengan el mismo nombre y dato que las columnas de entrenamiento (fit).
+
+        Args:
+            data (DataFrame): El DataFrame de Pandas que se va a transformar.
+            cols (list): lista de columnas a transformar.
+
+        Returns:
+            DataFrame: El DataFrame transformado. Las columnas originales no
+                existirán más y en su lugar estarán las N-1 (o N) columnas con
+                1s y 0s siendo N la cantidad de categorias de esa columna original.
+        """
+
         # Para cada columna, revisar las categorias y hacer OHE
         for col in data.columns:
             # Revisar si la columna existio en la fase de fit y evita crashear
@@ -210,20 +272,57 @@ class ZScaler(BaseEstimator, TransformerMixin):
 
 
 class ZeroOneScaler(BaseEstimator, TransformerMixin):
-    '''Objeto que tiene como finalidad aprender la media y desvio de un conjunto de columnas individualmente para luego realizar la detección y corrección de outliers en esa columna
-    Si la columna no es entero o float, no es una columna aceptable y se avisa al usuario'''
+    """Escalar entre 0 y 1 un conjunto de columnas de un DataFrame de Pandas.
+
+    Dado un conjunto de columnas de tipo numérico (int64, float64), esta clase
+    aprende los límites de la columna para hacer un escalado de los datos a
+    valores entre 0 y 1 de forma de poder usarlos para ciertos algoritmos de
+    aprendizaje automático.
+
+    Attributes:
+        check_unique_qty (bool): indica si es necesario que antes de escalar la
+            columna se chequee la cantidad de números únicos que tiene la
+            columna. Esto es útil para saltear las columnas que tengan One Hot
+            Encoding, ya que son numéricas, pero ya están entre 0 y 1 y solo hay
+            dos posibilidades.
+        column_stats (dict): información del máximo, el mínimo y el gap entre
+            estos dos valores para cada columna. Se aprende durante el fit.
+    """
 
     def __init__(self, check_unique_qty=True):
+        """Instanciado de un escalador entre 0 y 1.
+
+        Args:
+            check_unique_qty (bool): indica si es necesario que antes de escalar
+                la columna se chequee la cantidad de números únicos que tiene la
+                columna. Esto es útil para saltear las columnas que tengan One Hot
+                Encoding, ya que son numéricas, pero ya están entre 0 y 1 y solo
+                hay dos posibilidades. Por defecto es True.
+        """
         self.check_unique_qty = check_unique_qty
         self.column_stats = {}
 
     def params(self):
+        """Imprime los parámetros del OneZeroScaler por consola."""
         print(f'{"":->100}')
         print(f'check_unique_qty: {self.check_unique_qty}')
         print(f'column_stats: {self.column_stats}')
         print(f'{"":->100}')
 
     def fit(self, data_slice, y=None):
+        """Aprende el max, min y la distancia entre ambos de cada columna.
+
+        Note:
+            Debe pasarse únicamente columnas de tipo int64 o float64
+
+        Args:
+            data_slice (DataFrame): Un slice de un DataFrame de Pandas.
+
+        Returns:
+            self: Retorna una referencia a la instancia del objeto
+                OutlierCorrector ajustado.
+        """
+
         # Cada vez que se fitea, se debe limpiar las stats de las columnas
         self.column_stats = {}
         # Calcular la media y el desvío estándar para cada columna
@@ -243,6 +342,20 @@ class ZeroOneScaler(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, data_slice):
+        """Transforma el DataFrame, escalando entre 0 y 1 con los valores aprendidos
+
+        Note:
+            Debe pasarse una lista de columnas que tengan el mismo nombre y dato
+                que las columnas de entrenamiento (fit).
+
+        Args:
+            data_slice (DataFrame): El DataFrame de Pandas que se va a transformar.
+
+        Returns:
+            DataFrame: El DataFrame transformado. Se devuelve un DataFrame con las
+                mismas columnas pero escaladas en su contenido.
+        """
+
         # Verificar las columnas y escalar los valores restando la media y dividiendo por el desvio
         for col in data_slice.columns:
             if col in self.column_stats:
@@ -610,3 +723,16 @@ def add_lags(df, feat, lags):
         df[feat + f'lag{lag}'] = df[feat].shift(lag)
 
     return df
+
+
+def documentar(funcion, param2):
+    """
+    This is a reST style.
+
+    :param funcion: this is a first param
+    :param param2: this is a second param
+    :returns: this is a description of what is returned
+    :raises keyError: raises an exception
+    """
+    nada = 'nada'
+    return nada
