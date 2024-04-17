@@ -43,3 +43,4 @@ La lógica principal del producto se encuantra en: mim.net/work/bedrock_api.py
 La combinación de estas funciones permite implementar una solución potente para el marketing dirigido basado en análisis de datos y predicciones de IA, proporcionando recomendaciones personalizadas que pueden ser decisivas para el éxito de las campañas de marketing.
 
 
+![Image Description](images/output.png)
