@@ -1,0 +1,10 @@
+El user tiene una edad de 18-25, es F, hizo 8 compras en su vida , compra cada 70 días, cada sesión visita 10.62 productos en promedio , el pop-up con mayor aceptación fue con 20% de descuento.
+El user tiene una edad de 26-40, es F, hizo 18 compras en su vida , compra cada 55 días, cada sesión visita 8.61 productos en promedio , el pop-up con mayor aceptación fue con 70% de descuento.
+El user tiene una edad de 56-70, es M, hizo 3 compras en su vida , compra cada 10 días, cada sesión visita 7.04 productos en promedio , el pop-up con mayor aceptación fue con 10% de descuento.
+El user tiene una edad de 41-55, es F, hizo 9 compras en su vida , compra cada 58 días, cada sesión visita 7.36 productos en promedio , el pop-up con mayor aceptación fue con 40% de descuento.
+El user tiene una edad de 26-40, es F, hizo 7 compras en su vida , compra cada 50 días, cada sesión visita 2.63 productos en promedio , el pop-up con mayor aceptación fue con 20% de descuento.
+El user tiene una edad de 56-70, es F, hizo 14 compras en su vida , compra cada 42 días, cada sesión visita 8.49 productos en promedio , el pop-up con mayor aceptación fue con 20% de descuento.
+El user tiene una edad de 56-70, es F, hizo 35 compras en su vida , compra cada 62 días, cada sesión visita 2.32 productos en promedio , el pop-up con mayor aceptación fue con 20% de descuento.
+El user tiene una edad de 56-70, es F, hizo 10 compras en su vida , compra cada 34 días, cada sesión visita 5.41 productos en promedio , el pop-up con mayor aceptación fue con 30% de descuento.
+El user tiene una edad de 41-55, es F, hizo 15 compras en su vida , compra cada 47 días, cada sesión visita 5.59 productos en promedio , el pop-up con mayor aceptación fue con 20% de descuento.
+El user tiene una edad de 41-55, es F, hizo 29 compras en su vida , compra cada 40 días, cada sesión visita 4.83 productos en promedio , el pop-up con mayor aceptación fue con 20% de descuento.
