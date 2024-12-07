@@ -2,6 +2,9 @@
 
 Boost First Action is a tool designed to optimize digital marketing strategies when users access the homepage. It uses user behavior analysis and attributes to recommend personalized actions. The goal is to accelerate their purchase process by presenting options that have been successful for similar users.
 
+
+![Booster Image](images/booster.png)
+
 ## Key Components
 The main logic of the product is found in: mim.net/work/bedrock_api.py
 
